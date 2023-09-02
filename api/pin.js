@@ -44,6 +44,9 @@ export default async (req, res) => {
       CONSTANTS.FOUR_HOURS,
       CONSTANTS.ONE_DAY,
     );
+    cacheSeconds = process.env.CACHE_SECONDS
+      ? parseInt(process.env.CACHE_SECONDS, 10) || cacheSeconds
+      : cacheSeconds;
 
     /*
       if star count & fork count is over 1k then we are kFormating the text
@@ -58,7 +61,12 @@ export default async (req, res) => {
       cacheSeconds = CONSTANTS.FOUR_HOURS;
     }
 
-    res.setHeader("Cache-Control", `public, max-age=${cacheSeconds}`);
+    res.setHeader(
+      "Cache-Control",
+      `max-age=${
+        cacheSeconds / 2
+      }, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+    );
 
     return res.send(
       renderRepoCard(repoData, {
@@ -75,7 +83,7 @@ export default async (req, res) => {
       }),
     );
   } catch (err) {
-    res.setHeader("Cache-Control", `no-store`); // Don't cache error responses.
+    res.setHeader("Cache-Control", `no-cache, no-store, must-revalidate`); // Don't cache error responses.
     return res.send(renderError(err.message, err.secondaryMessage));
   }
 };
